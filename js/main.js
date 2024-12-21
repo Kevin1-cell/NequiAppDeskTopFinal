@@ -563,25 +563,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const phoneNumber = localStorage.getItem("phoneNumber");
-      if (!phoneNumber) {
-        alert(
-          "Error: No se encontró el número de teléfono. Reinicia el registro."
-        );
-        window.location.href = "register.html";
-        return;
-      }
 
-      const newUser = {
-        firstName: primerNombre.value,
-        secondName: segundoNombre.value || "",
-        lastName: primerApellido.value,
-        secondLastName: segundoApellido.value || "",
-        nickname: nickname.value || "",
-        residence: residencia.value || "",
-        email: correo1.value,
-        idNumber: numeroIdentificacion.value,
-        phoneNumber,
-      };
+      const newUser = new User(
+        primerNombre.value,
+        segundoNombre.value,
+        primerApellido.value,
+        segundoApellido.value,
+        nickname.value,
+        residencia.value,
+        correo1.value,
+        numeroIdentificacion.value,
+        phoneNumber
+      );
 
       account.saveUser(newUser);
 
@@ -590,13 +583,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Lógica para la vista de Crear contraseña
   if (window.location.pathname.includes("creat_password.html")) {
     const phoneNumber = localStorage.getItem("phoneNumber");
 
-    if (!phoneNumber || !account.userExists(phoneNumber)) {
+    const user = account.getUser(phoneNumber);
+
+    if (user) {
+      console.log("Usuario encontrado:", user);
+    } else {
+      console.log("No se encontró el usuario.");
       alert("Usuario no encontrado. Por favor, reinicia el registro.");
-      window.location.href = "register.html";
       return;
     }
 
@@ -633,16 +629,25 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const user = account.getUser(phoneNumber);
-      user.password = currentPin;
-      account.saveUser(user);
+      if (!phoneNumber) {
+        errorMessage.textContent = "Número de teléfono no encontrado.";
+        errorMessage.style.display = "block";
+        return;
+      }
 
-      alert("Contraseña guardada exitosamente.");
-      window.location.href = "../index.html";
+      if (user) {
+        user.password = currentPin;
+        account.saveUser(user);
+
+        alert("Contraseña guardada exitosamente.");
+        window.location.href = "../index.html";
+      } else {
+        errorMessage.textContent = "Usuario no encontrado.";
+        errorMessage.style.display = "block";
+      }
     });
   }
 
-  // Lógica para la vista de Login
   if (window.location.pathname.includes("login.html")) {
     const phoneInput = document.getElementById("phone");
     const loginButton = document.getElementById("login-btn");
@@ -657,7 +662,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      if (!account.userExists(phoneNumber)) {
+      if (!login.validatePhone(phoneNumber)) {
         errorMessage.textContent =
           "Número no válido o no registrado. Verifica e intenta de nuevo.";
         errorMessage.style.display = "block";
@@ -669,19 +674,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Lógica para la vista de Password
   if (window.location.pathname.includes("password.html")) {
+    const user = account.getAllUsers();
+    console.log(user);
+
+    //--FORMA PARA ELIMINAR UN USUARIO DEL PROGRAMA--
+    // alert("Apunto de eliminar un usuario");
+    // const phoneNumber = localStorage.getItem("currentPhoneNumber");
+    // console.log(`Numero a eliminar ${phoneNumber}`);
+    // account.deleteUser(phoneNumber);
+    // const lastUpdate = account.getAllUsers();
+    // console.log(lastUpdate);
+
+    //GARANTIZAR QUE NO HAYAN CLAVES INDEFINIDAS :D
+    account.cleanInvalidKeys();
+
     const savedPhoneNumber = localStorage.getItem("currentPhoneNumber");
-
-    if (!savedPhoneNumber || !account.userExists(savedPhoneNumber)) {
-      window.location.href = "login.html";
-      return;
-    }
-
     const passwordInputs = document.querySelectorAll(".pin");
     const numpadButtons = document.querySelectorAll(".numpad button");
     const errorMessage = document.getElementById("error-message");
     const acceptButton = document.getElementById("accept-btn");
+
+    if (!savedPhoneNumber) {
+      window.location.href = "login.html";
+      return;
+    }
 
     let enteredPassword = "";
 
@@ -705,10 +722,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     acceptButton.addEventListener("click", () => {
-      const user = account.getUser(savedPhoneNumber);
-
-      if (user && user.password === enteredPassword) {
+      if (login.validatePassword(savedPhoneNumber, enteredPassword)) {
         alert("Inicio de sesión exitoso.");
+        const currentUser = login.getCurrentUser(savedPhoneNumber);
+
         window.location.href = "home.html";
       } else {
         errorMessage.textContent = "Contraseña incorrecta. Intenta de nuevo.";
