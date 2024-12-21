@@ -1,10 +1,12 @@
 import Account from "./account.js";
 import User from "./user.js";
 import Login from "./login.js";
+import IA from "./ia.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const account = new Account();
   const login = new Login();
+  const ia = new IA();
 
   //ACCIONES
 
@@ -23,29 +25,88 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Validar que el número de celular inicie con "3" y tenga máximo 10 dígitos
+    recipientPhoneNumberInput.addEventListener("input", (e) => {
+      // Eliminar cualquier carácter no numérico
+      let value = recipientPhoneNumberInput.value.replace(/[^0-9]/g, "");
+
+      // Limitar a 10 dígitos
+      if (value.length > 10) {
+        value = value.slice(0, 10);
+      }
+
+      // Validar que inicie por "3"
+      if (value && value[0] !== "3") {
+        alert("El número de celular debe iniciar con '3'.");
+        value = ""; // Limpiar el campo si no cumple
+      }
+
+      recipientPhoneNumberInput.value = value;
+    });
+
+    // Formatear el campo "¿Cuánto?" como pesos colombianos
+    amountInput.addEventListener("input", (e) => {
+      // Eliminar cualquier carácter no numérico
+      let value = amountInput.value.replace(/\D/g, "");
+
+      // Aplicar formato de pesos colombianos
+      const formatter = new Intl.NumberFormat("es-CO");
+      amountInput.value = formatter.format(value);
+    });
+
     sendForm.addEventListener("submit", (event) => {
       event.preventDefault();
 
       const recipientPhoneNumber = recipientPhoneNumberInput.value.trim();
-      const rawAmount = amountInput.value.replace(/\D/g, "");
+      const rawAmount = amountInput.value.replace(/\D/g, ""); // Eliminar formato para procesar
       const amount = parseInt(rawAmount, 10);
       const message = messageInput.value.trim(); // Captura el mensaje
 
-      if (!recipientPhoneNumber || !account.userExists(recipientPhoneNumber)) {
-        alert("El número ingresado no pertenece a ningún usuario registrado.");
+      const messageContainer = document.getElementById("message-container");
+
+      // Función para mostrar mensajes
+      const showMessage = (text, type) => {
+        messageContainer.textContent = text;
+        messageContainer.className = `message-container ${type}`;
+        messageContainer.style.display = "block";
+      };
+
+      // Validaciones
+      if (!recipientPhoneNumber || recipientPhoneNumber.length !== 10) {
+        showMessage(
+          "Por favor, ingresa un número de celular válido (10 dígitos y debe iniciar con '3').",
+          "error"
+        );
+        return;
+      }
+
+      if (recipientPhoneNumber === currentPhoneNumber) {
+        showMessage("No puedes enviar dinero a tu propio número.", "error");
+        return;
+      }
+
+      if (!account.userExists(recipientPhoneNumber)) {
+        showMessage(
+          "El número ingresado no pertenece a ningún usuario registrado.",
+          "error"
+        );
         return;
       }
 
       if (isNaN(amount) || amount <= 0) {
-        alert("Por favor, ingresa un monto válido.");
+        showMessage("Por favor, ingresa un monto válido.", "error");
         return;
       }
 
       if (user.amount < amount) {
-        alert("No tienes suficiente saldo para enviar esta cantidad.");
+        showMessage(
+          "Saldo insuficiente. No puedes realizar esta transferencia.",
+          "error"
+        );
         return;
       }
 
+      // Procesar la transferencia
       const recipient = account.getUser(recipientPhoneNumber);
       user.amount -= amount;
       recipient.amount += amount;
@@ -71,52 +132,81 @@ document.addEventListener("DOMContentLoaded", () => {
         date: new Date().toLocaleString("es-CO"),
       });
 
-      alert(
-        `Has enviado $${amount.toLocaleString(
+      // Mostrar mensaje de éxito
+      showMessage(
+        `Transferencia exitosa. Has enviado $${amount.toLocaleString(
           "es-CO"
-        )} a ${recipientPhoneNumber}.`
+        )} a ${recipientPhoneNumber}.`,
+        "success"
       );
-      window.location.href = "home.html";
+
+      // Redirigir después de un breve tiempo
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 2000);
     });
   }
 
   //Recargar
   if (window.location.pathname.includes("deposit.html")) {
-    const currentPhoneNumber = localStorage.getItem("currentPhoneNumber");
-    const account = new Account();
-    const users = account.getAllUsers();
-    const user = users[currentPhoneNumber];
-
     const depositForm = document.getElementById("deposit-form");
     const phoneNumberInput = document.getElementById("phone-number");
     const amountInput = document.getElementById("amount");
+    const messageContainer = document.getElementById("message-container");
+
+    // Obtener el número de la cuenta activa desde localStorage
+    const currentPhoneNumber = localStorage.getItem("currentPhoneNumber");
+    const user = account.getUser(currentPhoneNumber);
 
     if (!user) {
+      // Si no hay usuario activo, redirigir al login
       alert("Por favor, inicia sesión.");
       window.location.href = "login.html";
       return;
     }
 
+    // Mostrar el número de cuenta actual en el campo de número de celular
+    phoneNumberInput.value = currentPhoneNumber;
+    phoneNumberInput.setAttribute("readonly", true); // Hacer el campo de solo lectura
+
+    // Función para mostrar mensajes
+    const showMessage = (text, type) => {
+      messageContainer.textContent = text;
+      messageContainer.className = `message-container ${type}`;
+      messageContainer.style.display = "block";
+    };
+
+    // Formatear el campo "¿Cuánto?" como pesos colombianos
+    amountInput.addEventListener("input", (e) => {
+      let value = amountInput.value.replace(/\D/g, ""); // Solo números
+      const formatter = new Intl.NumberFormat("es-CO");
+      amountInput.value = formatter.format(value); // Formato de pesos colombianos
+    });
+
+    // Validación y envío del formulario
     depositForm.addEventListener("submit", (event) => {
       event.preventDefault();
 
-      const enteredPhoneNumber = phoneNumberInput.value.trim();
-      const rawAmount = amountInput.value.replace(/\D/g, ""); // Filtrar caracteres no numéricos
+      const enteredPhoneNumber = phoneNumberInput.value.trim(); // Número ingresado
+      const rawAmount = amountInput.value.replace(/\D/g, ""); // Eliminar formato
       const amount = parseInt(rawAmount, 10);
 
+      // Validar que el número coincida con la sesión activa
       if (enteredPhoneNumber !== currentPhoneNumber) {
-        alert("El número ingresado no coincide con el número de tu cuenta.");
+        showMessage("No puedes recargar un número diferente al tuyo.", "error");
         return;
       }
 
       if (isNaN(amount) || amount <= 0) {
-        alert("Por favor, ingresa un monto válido.");
+        showMessage("Por favor, ingresa un monto válido.", "error");
         return;
       }
 
+      // Recargar el saldo del usuario activo
       user.amount += amount;
-      account.saveUser(user);
+      account.saveUser(user); // Guardar usuario actualizado
 
+      // Guardar la transacción en el historial
       saveTransaction(currentPhoneNumber, {
         title: "Depósito realizado",
         amount: `+$ ${amount.toLocaleString("es-CO")}`,
@@ -125,13 +215,21 @@ document.addEventListener("DOMContentLoaded", () => {
         date: new Date().toLocaleString("es-CO"),
       });
 
-      localStorage.setItem(
-        currentPhoneNumber + "userBalance",
-        user.amount.toFixed(2)
+      // Mostrar mensaje de éxito
+      showMessage(
+        `Recarga exitosa. Ahora tienes $${user.amount.toLocaleString(
+          "es-CO"
+        )}.`,
+        "success"
       );
 
-      alert(`Has depositado $${amount.toLocaleString("es-CO")} correctamente.`);
-      window.location.href = "home.html"; // Redirigir al home
+      // Limpiar campo después de la recarga
+      amountInput.value = "";
+
+      // Opcional: recargar la página después de un tiempo
+      setTimeout(() => {
+        window.location.href = "home.html";
+      }, 2000);
     });
   }
 
@@ -324,11 +422,22 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.appendChild(modalContainer);
 
       confirmButton.addEventListener("click", () => {
+        // Eliminar usuario
         account.deleteUser(phoneNumber);
+
+        // Eliminar historial de transacciones
+        const transactionsKey = `${phoneNumber}_transactions`;
+        localStorage.removeItem(transactionsKey);
+
+        // Limpiar datos del usuario actual
         localStorage.removeItem("currentPhoneNumber");
+
+        // Mostrar mensaje de confirmación
         saveMessage.textContent = "Tu cuenta ha sido bloqueada exitosamente.";
         saveMessage.style.display = "block";
         document.body.removeChild(modalContainer);
+
+        // Redirigir al inicio
         setTimeout(() => {
           window.location.href = "../index.html"; //CAMBIAR
         }, 2000);
@@ -402,9 +511,29 @@ document.addEventListener("DOMContentLoaded", () => {
     const user = account.getAllUsers();
     console.log(user);
 
-    //GARANTIZAR QUE NO HAYAN CLAVES INDEFINIDAS :D
+    // Garantizar que no haya claves indefinidas
     account.cleanInvalidKeys();
-    console.log(user);
+
+    // Validar en tiempo real
+    phoneNumberInput.addEventListener("input", () => {
+      let value = phoneNumberInput.value.replace(/[^0-9]/g, ""); // Solo números
+
+      // Limitar a 10 dígitos
+      if (value.length > 10) {
+        value = value.slice(0, 10);
+      }
+
+      // Mostrar mensaje de error si no inicia con "3"
+      if (value && value[0] !== "3") {
+        errorMessage.textContent = "El número debe iniciar con '3'.";
+        errorMessage.style.display = "block";
+      } else {
+        errorMessage.textContent = ""; // Ocultar mensaje de error si cumple
+        errorMessage.style.display = "none";
+      }
+
+      phoneNumberInput.value = value; // Actualizar el valor
+    });
 
     sendCodeButton.addEventListener("click", () => {
       const phoneValue = phoneNumberInput.value.trim();
@@ -412,6 +541,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Validaciones
       if (!phoneValue) {
         errorMessage.textContent = "Debes ingresar un número de celular.";
+        errorMessage.style.display = "block";
         return;
       }
 
@@ -422,11 +552,13 @@ document.addEventListener("DOMContentLoaded", () => {
       ) {
         errorMessage.textContent =
           "Número de teléfono no válido. Debe contener 10 dígitos y comenzar con 3.";
+        errorMessage.style.display = "block";
         return;
       }
 
       if (account.userExists(phoneValue)) {
         errorMessage.textContent = "El número de teléfono ya está registrado.";
+        errorMessage.style.display = "block";
         return;
       }
 
@@ -435,7 +567,7 @@ document.addEventListener("DOMContentLoaded", () => {
       account.saveUser(newUser);
 
       localStorage.setItem("phoneNumber", phoneValue); // Guardar número en LocalStorage
-      errorMessage.textContent = "Número guardado exitosamente.";
+      errorMessage.textContent = ""; // Limpiar mensaje de error
       window.location.href = "./code_number.html";
     });
   }
@@ -446,6 +578,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const numericKeys = document.querySelectorAll(".numeric-keypad .key");
     const acceptButton = document.getElementById("verify-code");
     const errorMessage = document.getElementById("error-message");
+    const successMessage = document.getElementById("success-message");
 
     const phoneNumber = localStorage.getItem("phoneNumber");
     const account = new Account();
@@ -457,6 +590,45 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       console.log("No se encontró el usuario.");
     }
+
+    // Validar cada input para permitir solo números
+    codeInputs.forEach((input) => {
+      input.addEventListener("input", () => {
+        input.value = input.value.replace(/[^0-9]/g, ""); // Eliminar caracteres no numéricos
+      });
+    });
+
+    // Validación al hacer clic en "Aceptar"
+    acceptButton.addEventListener("click", () => {
+      const code = Array.from(codeInputs)
+        .map((input) => input.value)
+        .join(""); // Unir los valores de los inputs en una sola cadena
+
+      if (code.length !== codeInputs.length) {
+        errorMessage.textContent =
+          "Por favor, completa todos los campos con números.";
+        errorMessage.style.display = "block";
+        successMessage.style.display = "none"; // Ocultar mensaje de éxito
+        return;
+      }
+
+      // Aquí puedes validar el código real que debería coincidir
+      if (code === "1234") {
+        // Cambia "1234" por la lógica que estés usando
+        errorMessage.style.display = "none"; // Ocultar mensaje de error
+        successMessage.textContent = "Correo enviado con éxito.";
+        successMessage.style.display = "block";
+
+        // Opcional: redirigir después de un tiempo
+        setTimeout(() => {
+          window.location.href = "home.html";
+        }, 2000);
+      } else {
+        successMessage.style.display = "none"; // Ocultar mensaje de éxito
+        errorMessage.textContent = "Código incorrecto. Intenta nuevamente.";
+        errorMessage.style.display = "block";
+      }
+    });
   }
 
   // Lógica para la vista de Retiro
@@ -584,6 +756,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   if (window.location.pathname.includes("creat_password.html")) {
+    const account = new Account();
     const phoneNumber = localStorage.getItem("phoneNumber");
 
     const user = account.getUser(phoneNumber);
@@ -648,16 +821,46 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  //LOGIN
   if (window.location.pathname.includes("login.html")) {
     const phoneInput = document.getElementById("phone");
     const loginButton = document.getElementById("login-btn");
     const errorMessage = document.getElementById("error-message");
 
+    // Validación en tiempo real del campo de celular
+    phoneInput.addEventListener("input", () => {
+      let value = phoneInput.value.replace(/[^0-9]/g, ""); // Eliminar caracteres no numéricos
+
+      // Limitar a 10 dígitos
+      if (value.length > 10) {
+        value = value.slice(0, 10);
+      }
+
+      // Validar que inicie con "3"
+      if (value && value[0] !== "3") {
+        errorMessage.textContent = "El número debe iniciar con '3'.";
+        errorMessage.style.display = "block";
+        value = ""; // Limpiar el campo si no cumple
+      } else {
+        errorMessage.style.display = "none"; // Ocultar mensaje si cumple
+      }
+
+      phoneInput.value = value; // Actualizar el valor del campo
+    });
+
+    // Validación al hacer clic en el botón "Entrar"
     loginButton.addEventListener("click", () => {
       const phoneNumber = phoneInput.value.trim();
 
       if (!phoneNumber) {
         errorMessage.textContent = "Por favor, ingrese un número de teléfono.";
+        errorMessage.style.display = "block";
+        return;
+      }
+
+      if (phoneNumber.length !== 10 || phoneNumber[0] !== "3") {
+        errorMessage.textContent =
+          "Número no válido. Debe iniciar con '3' y tener 10 dígitos.";
         errorMessage.style.display = "block";
         return;
       }
@@ -722,15 +925,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     acceptButton.addEventListener("click", () => {
-      if (login.validatePassword(savedPhoneNumber, enteredPassword)) {
-        alert("Inicio de sesión exitoso.");
-        const currentUser = login.getCurrentUser(savedPhoneNumber);
+      const successMessage = document.getElementById("success-message"); // Contenedor para el mensaje de éxito
 
-        window.location.href = "home.html";
+      if (login.validatePassword(savedPhoneNumber, enteredPassword)) {
+        // Mostrar mensaje de éxito
+        errorMessage.style.display = "none"; // Ocultar mensaje de error si estaba visible
+        successMessage.textContent = "Contraseña correcta.";
+        successMessage.style.display = "block";
+
+        // Redirigir a home después de un tiempo
+        setTimeout(() => {
+          const currentUser = login.getCurrentUser(savedPhoneNumber);
+          window.location.href = "home.html";
+        }, 2000);
       } else {
+        // Mostrar mensaje de error
+        successMessage.style.display = "none"; // Ocultar mensaje de éxito si estaba visible
         errorMessage.textContent = "Contraseña incorrecta. Intenta de nuevo.";
         errorMessage.style.display = "block";
 
+        // Limpiar los campos de entrada
         enteredPassword = "";
         passwordInputs.forEach((input) => {
           input.value = "";
@@ -739,7 +953,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  //Sección del home
+  // Sección del home
 
   if (window.location.pathname.includes("home.html")) {
     const sendButton = document.querySelector(
@@ -775,7 +989,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = "configuration.html";
     });
 
-    //Lógica para el nombre del header
+    // Lógica para el nombre del header
     const phoneNumber = localStorage.getItem("currentPhoneNumber");
     const users = account.getAllUsers();
     const user = users[phoneNumber];
@@ -804,8 +1018,56 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Mostrar el saldo actualizado
     const balanceElement = document.querySelector(".balance-card .amount");
-    if (balanceElement) {
-      balanceElement.textContent = `$ ${user.amount.toFixed(2)}`;
+    const totalElement = document.querySelector(".balance-card .total");
+
+    if (balanceElement && totalElement) {
+      const formatter = new Intl.NumberFormat("es-CO", {
+        style: "currency",
+        currency: "COP",
+        minimumFractionDigits: 2,
+      });
+
+      const formattedAmount = formatter.format(user.amount);
+
+      balanceElement.textContent = formattedAmount; // Actualiza "Disponible"
+      totalElement.textContent = `Total ${formattedAmount}`; // Actualiza "Total"
     }
+
+    //--Funciones importantes para la Inteligencia.
+
+    function agregarMensaje(alUsuario, mensaje) {
+      const chatInnerBox = document.querySelector(".chat-inner-box");
+      const divMensaje = document.createElement("div");
+      divMensaje.classList.add(alUsuario ? "user-message" : "bot-message");
+      divMensaje.textContent = mensaje;
+      chatInnerBox.appendChild(divMensaje);
+      chatInnerBox.scrollTop = chatInnerBox.scrollHeight;
+    }
+
+    const sendButton2 = document.querySelector(".send-btn");
+    const chatInput = document.querySelector(".chat-input");
+
+    sendButton2.addEventListener("click", () => {
+      const inputText = chatInput.value.trim();
+
+      if (inputText !== "") {
+        agregarMensaje(true, inputText);
+        chatInput.value = "";
+
+        agregarMensaje(false, "Pensando...");
+
+        ia.llamarGemini(inputText).then((respuesta) => {
+          const lastBotMessage = document.querySelector(".bot-message");
+          lastBotMessage.textContent = respuesta;
+          agregarMensaje(false, respuesta);
+        });
+      }
+    });
+
+    chatInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        sendButton2.click();
+      }
+    });
   }
 });
