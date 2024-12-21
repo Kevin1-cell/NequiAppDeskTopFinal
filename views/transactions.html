@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transacciones</title>
+    <link rel="stylesheet" href="../css/transactions.css">
+</head>
+<body>
+    <header>
+        <img src="../images/logo.png" alt="Nequi Logo" class="logo">
+        <button class="block-btn">Bloquear Nequi</button>
+        <button class="back-btn" onclick="history.back()">Volver</button>
+    </header>
+    <main>
+        <div class="transactions-container">
+            <!-- Las transacciones se generarán dinámicamente aquí -->
+        </div>
+    </main>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const currentPhoneNumber = localStorage.getItem("currentPhoneNumber");
+            const transactionsKey = `${currentPhoneNumber}_transactions`;
+            const transactionsContainer = document.querySelector(".transactions-container");
+            const transactions = JSON.parse(localStorage.getItem(transactionsKey)) || [];
+
+            // Limpia el contenedor antes de agregar las transacciones dinámicas
+            transactionsContainer.innerHTML = "";
+
+            // Si no hay transacciones, muestra un mensaje
+            if (transactions.length === 0) {
+                transactionsContainer.innerHTML = "<p>No hay transacciones disponibles.</p>";
+                return;
+            }
+
+            // Generar dinámicamente las transacciones
+            transactions.forEach(transaction => {
+                const transactionCard = document.createElement("div");
+                transactionCard.classList.add("transaction-card");
+                transactionCard.innerHTML = `
+                    <h2>${transaction.title}</h2>
+                    <p><span class="label">Monto:</span> <span class="value">${transaction.amount}</span></p>
+                    <p><span class="label">Número de teléfono:</span> <span class="value">${transaction.phone}</span></p>
+                    <p><span class="label">Descripción:</span> <span class="value">${transaction.description}</span></p>
+                    <p><span class="label">Fecha:</span> <span class="value">${transaction.date}</span></p>
+                `;
+                transactionsContainer.appendChild(transactionCard);
+            });
+        });
+    </script>
+</body>
+</html>

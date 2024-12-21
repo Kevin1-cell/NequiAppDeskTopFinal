@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuración</title>
+    <link rel="stylesheet" href="../css/configuration.css">
+</head>
+<body>
+    <header>
+        <img src="../images/logo.png" alt="Nequi Logo" class="logo">
+        <button class="block-btn">Bloquear Nequi</button>
+        <button class="back-btn" onclick="history.back()">Volver</button>
+    </header>
+    <main>
+        <section>
+            <h2>Tu info</h2>
+            <div class="form-group">
+                <label for="first-name">Tu nombre</label>
+                <input type="text" id="first-name" placeholder="Primer nombre" readonly>
+                <input type="text" id="middle-name" placeholder="Segundo nombre (opcional)" readonly>
+                <input type="text" id="last-name" placeholder="Primer apellido" readonly>
+                <input type="text" id="second-last-name" placeholder="Segundo apellido (Opcional)" readonly>
+            </div>
+            <div class="form-group">
+                <label>¿Cómo quieres que te llamemos?</label>
+                <input type="text" id="nickname" placeholder="Nombre de usuari@ (Opcional)">
+            </div>
+            <div class="form-group">
+                <label>¿En dónde vives?</label>
+                <input type="text" id="residence" placeholder="Residencia" value="COLOMBIA" readonly>
+            </div>
+        </section>
+
+        <section>
+            <h2>Tu correo electrónico</h2>
+            <div class="form-group">
+                <input type="email" id="email" placeholder="Escribe tu correo*">
+                <input type="email" id="email-repeat" placeholder="Repite tu correo*">
+            </div>
+            <p>Te enviamos a tu correo la confirmación de la edición de tu correo electrónico.</p>
+            <div class="form-group">
+                <label>Idioma</label>
+                <input type="text" id="language" value="Español/Colombiano." readonly>
+            </div>
+
+            <!-- Gestión de seguridad trasladada aquí -->
+            <h2>Gestión de seguridad</h2>
+            <div class="form-group">
+                <label for="current-password">Clave actual</label>
+                <input type="password" id="current-password" placeholder="Clave actual (4 dígitos)" maxlength="4">
+            </div>
+            <div class="form-group">
+                <label for="new-password">Nueva clave</label>
+                <input type="password" id="new-password" placeholder="Nueva clave (4 dígitos)" maxlength="4">
+            </div>
+            <button class="change-password-btn" id="change-password-btn">Cambiar clave</button>
+            <p id="password-message" class="password-message"></p>
+        </section>
+
+        <!-- Ayuda o inquietudes movido aquí -->
+        <section>
+            <h2>¿Ayuda o tienes alguna inquietud?</h2>
+            <p>
+                Estamos aquí para apoyarte en todo momento. Si tienes dudas sobre cómo usar la aplicación 
+                o resolver un problema, puedes consultar nuestra sección de Preguntas Frecuentes. 
+                Allí encontrarás respuestas rápidas a las consultas más comunes.
+            </p>
+            <h3>¿Prefieres hablar con alguien?</h3>
+            <p>
+                Usa nuestro chat de soporte, donde podrás comunicarte directamente con nuestros agentes 
+                o con Nequi AI. Estamos listos para guiarte y solucionar cualquier inconveniente.
+            </p>
+            <h3>Personaliza tu experiencia:</h3>
+            <p>
+                Desde esta sección, puedes ajustar configuraciones clave de tu cuenta, como:
+            </p>
+            <ul>
+                <li>Modificar datos personales.</li>
+                <li>Editar tu información de correo electrónico.</li>
+                <li>Gestionar opciones de seguridad, como contraseñas o bloqueo de la cuenta.</li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <button class="save-btn" id="save-btn">Guardar cambios y editar Perfil</button>
+        <p id="save-message" class="save-message"></p>
+    </footer>
+
+    <!-- Agregar referencia al script principal -->
+    <script type="module" src="../js/main.js"></script>
+</body>
+</html>

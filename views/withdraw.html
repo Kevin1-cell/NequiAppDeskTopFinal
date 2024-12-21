@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirar Dinero</title>
+    <link rel="stylesheet" href="../css/withdraw.css">
+</head>
+<body>
+    <header>
+        <img src="../images/logo.png" alt="Nequi Logo" class="logo">
+        <button class="back-btn" onclick="history.back()">Volver</button>
+    </header>
+    <main>
+        <section class="withdraw-container">
+            <h2>Retirar Dinero</h2>
+            <!-- Campo de monto a retirar -->
+            <div class="form-group">
+                <label for="amount">Monto a retirar</label>
+                <input type="text" id="amount" placeholder="Ingrese el monto">
+            </div>
+            <!-- Método de retiro (solo Cajero Automático) -->
+            <div class="form-group">
+                <label for="withdraw-method">Método de retiro</label>
+                <select id="withdraw-method">
+                    <option value="atm">Cajero Automático</option>
+                </select>
+            </div>
+            <!-- Botón para realizar el retiro -->
+            <button id="withdraw-btn" class="withdraw-btn">Retirar</button>
+            <!-- Mensaje de éxito o error -->
+            <p id="withdraw-message" class="withdraw-message"></p>
+        </section>
+    </main>
+    <footer>
+        <p>© 2024 Nequi App</p>
+    </footer>
+    <!-- Se especifica el uso de módulo para el script -->
+    <script type="module" src="../js/main.js"></script>
+</body>
+</html>
